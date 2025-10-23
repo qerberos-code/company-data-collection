@@ -20,6 +20,7 @@ sys.path.append(str(Path(__file__).parent / "src"))
 from src.config.settings import settings
 from src.database.connection import db_manager
 from src.agents.company_data_agent import CompanyDataAgent
+from src.agents.google_ai_agent import GoogleAICompanyDataAgent
 
 
 def setup_logging():
@@ -57,12 +58,16 @@ def initialize_database():
         return False
 
 
-def run_agentic_collection(company_name: str) -> dict:
+def run_agentic_collection(company_name: str, use_google_ai: bool = False) -> dict:
     """Run the agentic AI collection process."""
-    logger.info(f"Starting agentic collection for {company_name}")
+    logger.info(f"Starting agentic collection for {company_name} using {'Google AI' if use_google_ai else 'OpenAI'}")
     
     try:
-        agent = CompanyDataAgent()
+        if use_google_ai:
+            agent = GoogleAICompanyDataAgent()
+        else:
+            agent = CompanyDataAgent()
+        
         result = agent.process_company(company_name)
         
         if result['success']:
@@ -125,6 +130,16 @@ def main():
         action="store_true",
         help="Enable verbose logging"
     )
+    parser.add_argument(
+        "--google-ai",
+        action="store_true",
+        help="Use Google AI Studio (Gemini) instead of OpenAI"
+    )
+    parser.add_argument(
+        "--test-google-ai",
+        action="store_true",
+        help="Test Google AI connection"
+    )
     
     args = parser.parse_args()
     
@@ -142,6 +157,23 @@ def main():
         border_style="blue"
     )
     console.print(banner)
+    
+    # Test Google AI connection if requested
+    if args.test_google_ai:
+        console.print("[yellow]Testing Google AI connection...[/yellow]")
+        try:
+            google_agent = GoogleAICompanyDataAgent()
+            test_result = google_agent.test_google_ai_connection()
+            
+            if test_result['success']:
+                console.print("[green]✅ Google AI connection successful![/green]")
+                console.print(f"[blue]Model: {test_result['model']}[/blue]")
+                console.print(f"[blue]Response: {test_result['response'][:200]}...[/blue]")
+            else:
+                console.print(f"[red]❌ Google AI connection failed: {test_result['error']}[/red]")
+        except Exception as e:
+            console.print(f"[red]❌ Error testing Google AI: {e}[/red]")
+        return
     
     # Initialize database if requested
     if args.init_db:
@@ -171,7 +203,7 @@ def main():
         for company_name in company_names:
             task = progress.add_task(f"Processing {company_name}...", total=None)
             
-            result = run_agentic_collection(company_name)
+            result = run_agentic_collection(company_name, use_google_ai=args.google_ai)
             results.append(result)
             
             progress.update(task, description=f"Completed {company_name}")

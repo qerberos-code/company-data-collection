@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # OpenAI Configuration
     openai_api_key: Optional[str] = Field(default=None)
     
+    # Google AI Studio Configuration
+    google_ai_api_key: Optional[str] = Field(default=None)
+    google_ai_model: str = Field(default="gemini-1.5-flash")
+    
     # LangChain Configuration
     langchain_api_key: Optional[str] = Field(default=None)
     langchain_tracing_v2: bool = Field(default=True)
@@ -37,7 +41,11 @@ class Settings(BaseSettings):
     
     # Company Configuration
     target_company: str = Field(default="Alphabet Inc.")
-    company_search_terms: List[str] = Field(default=["Alphabet", "Google", "Alphabet Holdings", "Google LLC"])
+    company_search_terms: str = Field(default="Alphabet,Google,Alphabet Holdings,Google LLC")
+    
+    def get_search_terms(self) -> List[str]:
+        """Parse search terms from comma-separated string."""
+        return [term.strip() for term in self.company_search_terms.split(',') if term.strip()]
     
     class Config:
         env_file = ".env"

@@ -3,6 +3,7 @@ langchain==0.1.0
 langchain-openai==0.0.5
 langchain-community==0.0.10
 openai>=1.10.0
+google-generativeai>=0.8.0
 
 # Data collection and web scraping
 requests==2.31.0
